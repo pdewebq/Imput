@@ -1,0 +1,7 @@
+[*.{fs,fsx,fsi}]
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{html,js}]
+insert_final_newline = true
+trim_trailing_whitespace = true

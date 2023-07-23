@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Celeste - Imput</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/2e9301a518.js" crossorigin="anonymous"></script>
+    <style>
+        html {
+            font-family: 'Source Code Pro', monospace;
+        }
+        [data-keycode] {
+            height: 50px;
+            width: 50px;
+            text-align: center;
+            background-color: rgba(127, 127, 127, 0.8);
+        }
+        [data-keycode] {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .is-up {
+            /*background-color: white;*/
+        }
+        .is-down {
+            background-color: rgba(230, 230, 230, 0.8);
+        }
+    </style>
+</head>
+<body>
+
+<div style="display: flex; flex-direction: column; gap: 4px">
+    <div style="display: flex; gap: 4px">
+        <div data-keycode="50">
+            <span>Grab</span>
+        </div>
+        <div data-keycode="53">
+            <span>Dash</span>
+        </div>
+        <div data-keycode="111">
+            <i class="fa-solid fa-chevron-up"></i>
+        </div>
+    </div>
+    <div style="display: flex; gap: 4px">
+        <div data-keycode="54">
+            <span>Jump</span>
+        </div>
+        <div data-keycode="113">
+            <i class="fa-solid fa-chevron-left"></i>
+        </div>
+        <div data-keycode="116">
+            <i class="fa-solid fa-chevron-down"></i>
+        </div>
+        <div data-keycode="114">
+            <i class="fa-solid fa-chevron-right"></i>
+        </div>
+    </div>
+</div>
+
+<script src="/keys.js"></script>
+
+</body>
+</html>
