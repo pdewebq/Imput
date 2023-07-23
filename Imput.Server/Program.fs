@@ -14,6 +14,8 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 
 open Imput
+open Imput.InputListening
+open Imput.InputListening.Linux
 
 type InputListenerHostedService(logger: ILogger<InputListenerHostedService>, inputListener: IInputListener) =
     inherit BackgroundService()

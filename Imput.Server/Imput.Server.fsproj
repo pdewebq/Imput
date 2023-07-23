@@ -6,7 +6,8 @@
 
     <ItemGroup>
         <Compile Include="Utils.fs" />
-        <Compile Include="InputListener.fs" />
+        <Compile Include="InputListening\InputListener.fs" />
+        <Compile Include="InputListening\LinuxInputListener.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
 

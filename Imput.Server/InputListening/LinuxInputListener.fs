@@ -1,26 +1,14 @@
-namespace Imput
+namespace Imput.InputListening.Linux
 
-open System
 open System.IO
 open System.Reactive.Linq
 open System.Runtime.InteropServices
 open FSharp.Control.Reactive
 open FsToolkit.ErrorHandling
 
-[<RequireQualifiedAccess>]
-type KeyAction =
-    | Up
-    | Down
+open Imput
+open Imput.InputListening
 
-type KeyEvent = {
-    KeyCode: int
-    Action: KeyAction
-}
-
-type IInputListener =
-    abstract Keys: IObservable<KeyEvent>
-
-// ----
 
 [<Struct; StructLayout(LayoutKind.Sequential)>]
 type KernelTimeVal = {
