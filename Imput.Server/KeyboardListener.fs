@@ -1,7 +1,6 @@
 namespace Imput
 
 open System
-open System.Diagnostics
 open System.IO
 open System.Reactive.Linq
 open System.Runtime.InteropServices
@@ -57,34 +56,3 @@ type LinuxDevInputEventKeyboardListener(eventId: int) =
                     |> Observable.choose id
                     |> Observable.repeat
             lines
-
-type XInputKeyboardListener(inputId: string) =
-    interface IKeyboardListener with
-        member this.Keys =
-            let proc = new Process()
-            proc.StartInfo.FileName <- "xinput"
-            proc.StartInfo.Arguments <- $"test {inputId}"
-            proc.StartInfo.RedirectStandardOutput <- true
-
-            // TODO: Ensure race conditions
-            proc.Start() |> function false -> failwith "Failed to start" | _ -> ()
-            let lines =
-                Observable.using
-                    (fun () -> proc)
-                    (fun proc ->
-                        let stdoutReader = proc.StandardOutput
-                        Observable.FromAsync(fun () -> stdoutReader.ReadLineAsync())
-                        |> Observable.repeat
-                        |> Observable.takeWhile (fun line -> line <> null)
-                    )
-            lines
-            |> Observable.map ^fun line ->
-                let keyAction =
-                    if line.StartsWith("key press") then
-                        KeyAction.Down
-                    elif line.StartsWith("key release") then
-                        KeyAction.Up
-                    else
-                        invalidOp $"Invalid xinput event: {line}"
-                let keycode = line.Substring(12) |> int
-                { KeyCode = keycode; Action = keyAction }

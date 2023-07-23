@@ -49,7 +49,6 @@ let main args =
         formatter.SingleLine <- true
     ) |> ignore
 
-    // builder.Services.AddTransient<IKeyboardListener, XInputKeyboardListener>(fun _ -> XInputKeyboardListener("13")) |> ignore
     builder.Services.AddTransient<IKeyboardListener, LinuxDevInputEventKeyboardListener>(fun _ -> LinuxDevInputEventKeyboardListener(17)) |> ignore
     builder.Services.AddHostedService<KeyboardListenerHostedService>() |> ignore
 
