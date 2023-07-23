@@ -17,7 +17,7 @@ type KeyEvent = {
     Action: KeyAction
 }
 
-type IKeyboardListener =
+type IInputListener =
     abstract Keys: IObservable<KeyEvent>
 
 // ----
@@ -36,8 +36,8 @@ type KernelInputEvent = {
     Value: int32
 }
 
-type LinuxDevInputEventKeyboardListener(eventId: int) =
-    interface IKeyboardListener with
+type LinuxDevInputEventInputListener(eventId: int) =
+    interface IInputListener with
         member this.Keys =
             // let buffer = Array.zeroCreate 24
             let lines =

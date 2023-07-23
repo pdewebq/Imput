@@ -15,19 +15,19 @@ open Microsoft.AspNetCore.Http
 
 open Imput
 
-type KeyboardListenerHostedService(logger: ILogger<KeyboardListenerHostedService>, keyboardListener: IKeyboardListener) =
+type InputListenerHostedService(logger: ILogger<InputListenerHostedService>, inputListener: IInputListener) =
     inherit BackgroundService()
     override this.ExecuteAsync(stoppingToken) = task {
         use _ =
-            keyboardListener.Keys
+            inputListener.Keys
             |> Observable.subscribe ^fun ev ->
-                logger.LogInformation("{Action} {KeyCode}", ev.Action, ev.KeyCode)
+                logger.LogInformation("Key {Action} {KeyCode}", ev.Action, ev.KeyCode)
         do! Task.Delay(Timeout.Infinite, stoppingToken)
     }
 
-let sendKeys (applicationLifetime: IHostApplicationLifetime) (keyboardListener: IKeyboardListener) (webSocket: WebSocket) = task {
+let sendKeys (applicationLifetime: IHostApplicationLifetime) (inputListener: IInputListener) (webSocket: WebSocket) = task {
     try
-        do! keyboardListener.Keys
+        do! inputListener.Keys
             |> Observable.flatmapTask ^fun keyEvent -> task {
                 let keyActionStr =
                     match keyEvent.Action with
@@ -49,8 +49,8 @@ let main args =
         formatter.SingleLine <- true
     ) |> ignore
 
-    builder.Services.AddTransient<IKeyboardListener, LinuxDevInputEventKeyboardListener>(fun _ -> LinuxDevInputEventKeyboardListener(17)) |> ignore
-    builder.Services.AddHostedService<KeyboardListenerHostedService>() |> ignore
+    builder.Services.AddTransient<IInputListener>(fun _ -> LinuxDevInputEventInputListener(17)) |> ignore
+    builder.Services.AddHostedService<InputListenerHostedService>() |> ignore
 
     let app = builder.Build()
 
@@ -59,10 +59,10 @@ let main args =
         if ctx.Request.Path = PathString("/ws/keys") then
             if ctx.WebSockets.IsWebSocketRequest then
                 let! webSocket = ctx.WebSockets.AcceptWebSocketAsync()
-                let keyboardListener = ctx.RequestServices.GetRequiredService<IKeyboardListener>()
+                let inputListener = ctx.RequestServices.GetRequiredService<IInputListener>()
                 let applicationLifetime = ctx.RequestServices.GetRequiredService<IHostApplicationLifetime>()
                 app.Logger.LogInformation("New client connected")
-                return! sendKeys applicationLifetime keyboardListener webSocket
+                return! sendKeys applicationLifetime inputListener webSocket
             else
                 ctx.Response.StatusCode <- StatusCodes.Status400BadRequest
         else
