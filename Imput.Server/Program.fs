@@ -7,6 +7,7 @@ open System.Text
 open System.Threading
 open System.Threading.Tasks
 open FSharp.Control.Reactive
+open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.DependencyInjection
@@ -51,7 +52,17 @@ let main args =
         formatter.SingleLine <- true
     ) |> ignore
 
-    builder.Services.AddTransient<IInputListener>(fun _ -> LinuxDevInputEventInputListener(17)) |> ignore
+    builder.Services.AddTransient<IInputListener>(fun services ->
+        let config = services.GetRequiredService<IConfiguration>()
+        let inputListenerConfig = config.GetSection("InputListener")
+        let inputListenerType = inputListenerConfig.GetRequiredSection("Type").Get<string>()
+        match inputListenerType with
+        | "LinuxDevInput" ->
+            let inputDeviceId = inputListenerConfig.GetRequiredSection("InputDeviceId").Get<int>()
+            LinuxDevInputEventInputListener(inputDeviceId)
+        | _ ->
+            failwith $"Invalid InputListener type: {inputListenerType}"
+    ) |> ignore
     builder.Services.AddHostedService<InputListenerHostedService>() |> ignore
 
     let app = builder.Build()
