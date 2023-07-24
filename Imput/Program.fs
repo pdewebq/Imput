@@ -3,6 +3,7 @@ module Imput.Program
 open System
 open System.Net.WebSockets
 open System.Reactive.Linq
+open System.Reflection
 open System.Text
 open System.Threading
 open System.Threading.Tasks
@@ -69,6 +70,8 @@ let main args =
     builder.Services.AddHostedService<InputListenerHostedService>() |> ignore
 
     let app = builder.Build()
+
+    app.Logger.LogInformation("Version {Version}", Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion)
 
     app.UseWebSockets() |> ignore
     app.Use(fun ctx (next: RequestDelegate) -> (task {
