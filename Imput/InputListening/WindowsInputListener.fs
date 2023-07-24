@@ -2,16 +2,15 @@ namespace Imput.InputListening.Windows
 
 open System
 open System.ComponentModel
-open System.Diagnostics
 open System.Reactive.Subjects
 open System.Runtime.InteropServices
+open System.Threading
+open Microsoft.Extensions.Logging
 open FSharp.Control.Reactive
 open FsToolkit.ErrorHandling
 
 open Imput
 open Imput.InputListening
-
-// https://github.com/ThoNohT/NohBoard/tree/master/NohBoard/Hooking/Interop
 
 module Interop =
 
@@ -46,7 +45,15 @@ module Interop =
         /// Test the extended-key flag.
         let LLKHF_EXTENDED: int = KF_EXTENDED >>> 8
 
+        // ----
+
+        let [<Literal>] WM_DESTROY: uint = 0x0002u
+
     module Structs =
+
+        type DWORD = int
+        type WPARAM = IntPtr
+        type LPARAM = IntPtr
 
         [<Struct; StructLayout(LayoutKind.Sequential)>]
         type KeyboardHookStruct = {
@@ -57,64 +64,122 @@ module Interop =
             ExtraInfo: int32
         }
 
-    type HookProc = delegate of nCode: int * wParam: IntPtr * lParam: IntPtr -> IntPtr
+        [<Struct; StructLayout(LayoutKind.Sequential, Pack = 4)>]
+        type POINT = {
+            x: int32
+            y: int32
+        }
+
+        [<Struct; StructLayout(LayoutKind.Sequential, Pack = 8)>]
+        type MSG = {
+            hwnd: IntPtr
+            message: uint32
+            wParam: WPARAM
+            lParam: LPARAM
+            time: uint32
+            pt: POINT
+        }
+
+    open Structs
+
+    type HookProc = delegate of nCode: int * wParam: WPARAM * lParam: LPARAM -> int
 
     module FunctionsImports =
 
-        [<DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)>]
-        extern IntPtr SetWindowsHookEx(int idHook, HookProc lpfn, IntPtr hMod, uint dwThreadId)
+        [<DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall, SetLastError = true)>]
+        extern int CallNextHookEx(int idHook, int nCode, WPARAM wParam, LPARAM lParam)
 
-        [<DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)>]
-        [<return: MarshalAs(UnmanagedType.Bool)>]
-        extern bool UnhookWindowsHookEx(IntPtr idHook)
+        [<DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall, SetLastError = true)>]
+        extern int SetWindowsHookEx(int idHook, HookProc lpfn, IntPtr hMod, DWORD dwThreadId)
 
-        [<DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)>]
-        extern IntPtr CallNextHookEx(IntPtr idHook, int nCode, IntPtr wParam, IntPtr lParam)
+        [<DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall, SetLastError = true)>]
+        extern int UnhookWindowsHookEx(int idHook)
 
-        [<DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)>]
-        extern IntPtr GetModuleHandle(string lpModuleName)
+        // ----
+
+        [<DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall, SetLastError = true)>]
+        extern bool GetMessage(MSG& lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax)
+
+        [<DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall, SetLastError = true)>]
+        extern int64 DispatchMessage(MSG& lpMsg)
+
+        [<DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall, SetLastError = true)>]
+        extern bool TranslateMessage(MSG& lpMsg)
+
+        // ----
+
+        [<DllImport("kernel32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall, SetLastError = true)>]
+        extern DWORD GetCurrentThreadId()
+
+        [<DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall, SetLastError = true)>]
+        extern bool PostThreadMessage(DWORD idThread, uint Msg, WPARAM wParam, LPARAM lParam)
 
 open Interop
 open Interop.Defines
 open Interop.Structs
 open Interop.FunctionsImports
 
-type WindowsInputListener() =
+type WindowsInputListener(logger: ILogger<WindowsInputListener>) =
 
     interface IInputListener with
         member this.Keys =
             Observable.defer ^fun () ->
                 let keySubject = new System.Reactive.Subjects.Subject<KeyEvent>()
+                use messageLoopNativeTreadId = new SyncIVar<DWORD>()
+
+                let mutable procId: int = Unchecked.defaultof<_>
+                let messageLoopThread = Thread(fun () ->
+                    try
+                        messageLoopNativeTreadId.Set(GetCurrentThreadId())
+
+                        let proc = HookProc(fun nCode wParam lParam ->
+                            let info = Marshal.PtrToStructure<KeyboardHookStruct>(lParam)
+                            let extended = (info.Flags &&& LLKHF_EXTENDED) <> 0
+                            let keyCode = if extended && info.VirtualKeyCode = int32 VK_RETURN then 1025 else info.VirtualKeyCode
+                            let keyEvent = option {
+                                let! keyAction =
+                                    match int32 wParam with
+                                    | WM_KEYDOWN
+                                    | WM_SYSKEYDOWN ->
+                                        Some KeyAction.Down
+                                    | WM_KEYUP
+                                    | WM_SYSKEYUP ->
+                                        Some KeyAction.Up
+                                    | _ ->
+                                        None
+                                return { KeyCode = keyCode; Action = keyAction }
+                            }
+                            keyEvent |> Option.iter ^fun keyEvent ->
+                                keySubject.OnNext(keyEvent)
+                            CallNextHookEx(procId, nCode, wParam, lParam)
+                        )
+
+                        procId <- SetWindowsHookEx(WH_KEYBOARD_LL, proc, IntPtr.Zero, 0)
+                        if procId = 0 then
+                            raise (Win32Exception(Marshal.GetLastWin32Error()))
+
+                        let mutable msg: MSG = Unchecked.defaultof<_>
+                        let mutable doMessageLoop = true
+                        while doMessageLoop && GetMessage(&msg, IntPtr.Zero, 0u, 0u) do
+                            if msg.message = WM_DESTROY then
+                                doMessageLoop <- false
+                            else
+                                TranslateMessage(&msg) |> ignore
+                                DispatchMessage(&msg) |> ignore
+                    with ex ->
+                        logger.LogError(ex, "Unhandled exception in message loop")
+                        reraise ()
+                )
+                messageLoopThread.Name <- $"{nameof(WindowsInputListener)} message loop thread"
+                messageLoopThread.Start()
+
                 Observable.using
                 <| fun () ->
-                    let mutable procId: IntPtr = Unchecked.defaultof<_>
-                    let proc = HookProc(fun nCode wParam lParam ->
-                        let info = Marshal.PtrToStructure<KeyboardHookStruct>(lParam)
-                        let extended = (info.Flags &&& LLKHF_EXTENDED) <> 0
-                        let keyCode = if extended && info.VirtualKeyCode = int32 VK_RETURN then 1025 else info.VirtualKeyCode
-                        let keyEvent = option {
-                            let! keyAction =
-                                match int32 wParam with
-                                | WM_KEYDOWN
-                                | WM_SYSKEYDOWN ->
-                                    Some KeyAction.Down
-                                | WM_KEYUP
-                                | WM_SYSKEYUP ->
-                                    Some KeyAction.Up
-                                | _ ->
-                                    None
-                            return { KeyCode = keyCode; Action = keyAction }
-                        }
-                        keyEvent |> Option.iter ^fun keyEvent ->
-                            keySubject.OnNext(keyEvent)
-                        CallNextHookEx(procId, nCode, wParam, lParam)
-                    )
-                    use currProcess = Process.GetCurrentProcess()
-                    use currModule = currProcess.MainModule
-                    procId <- SetWindowsHookEx(WH_KEYBOARD_LL, proc, GetModuleHandle(currModule.ModuleName), 0u)
                     Disposable.create ^fun () ->
                         let res = UnhookWindowsHookEx(procId)
-                        if not res then
+                        if res = 0 then
                             raise (Win32Exception(Marshal.GetLastWin32Error()))
+                        PostThreadMessage(messageLoopNativeTreadId.WaitValue(), WM_DESTROY, WPARAM.Zero, LPARAM.Zero) |> ignore
+                        messageLoopThread.Join()
                 <| fun _ ->
                     keySubject

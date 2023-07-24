@@ -63,7 +63,7 @@ let main args =
             let inputDeviceId = inputListenerConfig.GetRequiredSection("InputDeviceId").Get<int>()
             LinuxDevInputEventInputListener(inputDeviceId)
         | "Windows" ->
-            WindowsInputListener()
+            WindowsInputListener(services.GetRequiredService<_>())
         | _ ->
             failwith $"Invalid InputListener type: {inputListenerType}"
     ) |> ignore
