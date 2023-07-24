@@ -1,4 +1,4 @@
-module Imput.Server.Program
+module Imput.Program
 
 open System
 open System.Net.WebSockets
