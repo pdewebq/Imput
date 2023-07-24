@@ -17,6 +17,7 @@ open Microsoft.AspNetCore.Http
 open Imput
 open Imput.InputListening
 open Imput.InputListening.Linux
+open Imput.InputListening.Windows
 
 type InputListenerHostedService(logger: ILogger<InputListenerHostedService>, inputListener: IInputListener) =
     inherit BackgroundService()
@@ -60,6 +61,8 @@ let main args =
         | "LinuxDevInput" ->
             let inputDeviceId = inputListenerConfig.GetRequiredSection("InputDeviceId").Get<int>()
             LinuxDevInputEventInputListener(inputDeviceId)
+        | "Windows" ->
+            WindowsInputListener()
         | _ ->
             failwith $"Invalid InputListener type: {inputListenerType}"
     ) |> ignore
