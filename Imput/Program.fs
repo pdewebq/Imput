@@ -50,6 +50,33 @@ module Program =
         with :? OperationCanceledException -> ()
     }
 
+    let getInputListener (config: IConfigurationSection) (services: IServiceProvider) : IInputListener =
+        let listenerType = config.GetValue("Type", "Auto")
+        match listenerType with
+        | "Auto" ->
+            if OperatingSystem.IsLinux() then
+                AggregateLinuxDevInputEventInputListener(services.GetRequiredService<_>(), services.GetRequiredService<_>())
+            elif OperatingSystem.IsWindows() then
+                WindowsInputListener(services.GetRequiredService<_>(), services.GetRequiredService<_>())
+            else
+                raise (PlatformNotSupportedException())
+        | "LinuxDevInput" ->
+            let eventFilesSect = config.GetRequiredSection("EventFiles")
+            let eventFiles =
+                if eventFilesSect.Value = "*" then
+                    None
+                else
+                    let eventFiles = eventFilesSect.GetChildren() |> Seq.map (fun s -> s.Value) |> Seq.toArray
+                    Some eventFiles
+            AggregateLinuxDevInputEventInputListener(
+                services.GetRequiredService<_>(), services.GetRequiredService<_>(),
+                ?eventFiles=eventFiles
+            )
+        | "WindowsHook" ->
+            WindowsInputListener(services.GetRequiredService<_>(), services.GetRequiredService<_>())
+        | _ ->
+            failwith $"Invalid InputListener type: {listenerType}"
+
     [<EntryPoint>]
     let main args =
         let builder = WebApplication.CreateBuilder(args)
@@ -65,12 +92,7 @@ module Program =
             mapper
         ) |> ignore
         builder.Services.AddTransient<IInputListener>(fun services ->
-            if OperatingSystem.IsLinux() then
-                AggregateLinuxDevInputEventInputListener(services.GetRequiredService<_>(), services.GetRequiredService<_>())
-            elif OperatingSystem.IsWindows() then
-                WindowsInputListener(services.GetRequiredService<_>(), services.GetRequiredService<_>())
-            else
-                raise (PlatformNotSupportedException())
+            getInputListener (builder.Configuration.GetSection("InputListener")) services
         ) |> ignore
         if builder.Configuration.GetValue("InputLogger:Enable", false) then
             builder.Services.AddHostedService<InputLogger>() |> ignore

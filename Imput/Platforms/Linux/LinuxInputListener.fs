@@ -46,12 +46,12 @@ type LinuxDevInputEventInputListener(keyCodeMapper: KeyCodeMapper, stream: Strea
             |> Observable.choose id
             |> Observable.repeat
 
-type AggregateLinuxDevInputEventInputListener(logger: ILogger<AggregateLinuxDevInputEventInputListener>, keyCodeMapper: KeyCodeMapper) =
+type AggregateLinuxDevInputEventInputListener(logger: ILogger<AggregateLinuxDevInputEventInputListener>, keyCodeMapper: KeyCodeMapper, ?eventFiles: string array) =
     interface IInputListener with
         member this.Keys =
             Observable.defer ^fun () ->
-                let files = Directory.GetFiles("/dev/input/", "event*")
-                files
+                let eventFiles = eventFiles |> Option.defaultWith (fun () -> Directory.GetFiles("/dev/input/", "event*"))
+                eventFiles
                 |> Seq.choose ^fun path ->
                     try
                         let stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
