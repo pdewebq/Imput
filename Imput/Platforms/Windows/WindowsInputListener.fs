@@ -136,18 +136,18 @@ type WindowsInputListener(logger: ILogger<WindowsInputListener>, keyCodeMapper: 
                             let extended = (info.Flags &&& LLKHF_EXTENDED) <> 0
                             let keyCode = if extended && info.VirtualKeyCode = int32 VK_RETURN then 1025 else info.VirtualKeyCode
                             let keyEvent = option {
-                                let! keyAction =
+                                let! keyState =
                                     match int32 wParam with
                                     | WM_KEYDOWN
                                     | WM_SYSKEYDOWN ->
-                                        Some KeyAction.Down
+                                        Some KeyState.Down
                                     | WM_KEYUP
                                     | WM_SYSKEYUP ->
-                                        Some KeyAction.Up
+                                        Some KeyState.Up
                                     | _ ->
                                         None
                                 return {
-                                    Action = keyAction
+                                    State = keyState
                                     NativeCode = keyCode
                                     Code = keyCodeMapper.FromWindowsKeyCode(keyCode)
                                 }

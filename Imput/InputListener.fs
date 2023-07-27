@@ -3,14 +3,14 @@ namespace Imput
 open System
 
 [<RequireQualifiedAccess>]
-type KeyAction =
+type KeyState =
     | Up
     | Down
 
 type KeyEvent = {
     Code: string
     NativeCode: int
-    Action: KeyAction
+    State: KeyState
 }
 
 type IInputListener =

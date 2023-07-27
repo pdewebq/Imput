@@ -26,7 +26,7 @@ function connect() {
 
         const elems = document.querySelectorAll(`[data-key-code="${keyEvent.code}"]`)
         for (const elem of elems) {
-            elem.setAttribute("data-key-state", keyEvent.keyAction)
+            elem.setAttribute("data-key-state", keyEvent.keyState)
         }
     }
 }

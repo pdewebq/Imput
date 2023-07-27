@@ -34,10 +34,10 @@ type LinuxDevInputEventInputListener(keyCodeMapper: KeyCodeMapper, stream: Strea
                 let kernelInputEvent = MemoryMarshal.Read<KernelInputEvent>(buffer)
                 return option {
                     do! Option.requireTrue (kernelInputEvent.Type = 1s)
-                    let! keyAction = kernelInputEvent.Value |> function 1 -> Some KeyAction.Down | 0 -> Some KeyAction.Up | _ -> None
+                    let! keyState = kernelInputEvent.Value |> function 1 -> Some KeyState.Down | 0 -> Some KeyState.Up | _ -> None
                     let keycode = kernelInputEvent.Code + 8s |> int
                     return {
-                        Action = keyAction
+                        State = keyState
                         NativeCode = keycode
                         Code = keyCodeMapper.FromLinuxKeyCode(keycode)
                     }

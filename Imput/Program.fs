@@ -26,7 +26,7 @@ type InputLogger(logger: ILogger<InputLogger>, inputListener: IInputListener) =
         use _ =
             inputListener.Keys
             |> Observable.subscribe ^fun ev ->
-                logger.LogInformation("Key {Action} {Code} (native: {NativeCode})", ev.Action, ev.Code, ev.NativeCode)
+                logger.LogInformation("Key {State} {Code} (native: {NativeCode})", ev.State, ev.Code, ev.NativeCode)
         do! Task.Delay(Timeout.Infinite, stoppingToken)
     }
 
@@ -38,11 +38,11 @@ module Program =
         try
             do! inputListener.Keys
                 |> Observable.flatmapTask ^fun keyEvent -> task {
-                    let keyActionStr =
-                        match keyEvent.Action with
-                        | KeyAction.Up -> "up"
-                        | KeyAction.Down -> "down"
-                    let data = JsonSerializer.Serialize({| keyAction = keyActionStr; code = keyEvent.Code; nativeCode = keyEvent.NativeCode |})
+                    let keyStateStr =
+                        match keyEvent.State with
+                        | KeyState.Up -> "up"
+                        | KeyState.Down -> "down"
+                    let data = JsonSerializer.Serialize({| keyState = keyStateStr; code = keyEvent.Code; nativeCode = keyEvent.NativeCode |})
                     let buffer = ReadOnlyMemory(Encoding.UTF8.GetBytes(data))
                     do! webSocket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None)
                 }
