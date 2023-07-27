@@ -124,7 +124,7 @@ type WindowsInputListener(logger: ILogger<WindowsInputListener>, keyCodeMapper: 
         member this.Keys =
             Observable.defer ^fun () ->
                 let keySubject = new System.Reactive.Subjects.Subject<KeyEvent>()
-                use messageLoopNativeTreadId = new SyncIVar<DWORD>()
+                let messageLoopNativeTreadId = new SyncIVar<DWORD>()
 
                 let mutable procId: int = Unchecked.defaultof<_>
                 let messageLoopThread = Thread(fun () ->
@@ -178,11 +178,14 @@ type WindowsInputListener(logger: ILogger<WindowsInputListener>, keyCodeMapper: 
 
                 Observable.using
                 <| fun () ->
-                    Disposable.create ^fun () ->
-                        let res = UnhookWindowsHookEx(procId)
-                        if res = 0 then
-                            raise (Win32Exception(Marshal.GetLastWin32Error()))
-                        PostThreadMessage(messageLoopNativeTreadId.WaitValue(), WM_DESTROY, WPARAM.Zero, LPARAM.Zero) |> ignore
-                        messageLoopThread.Join()
+                    Disposables.compose [
+                        Disposable.create ^fun () ->
+                            let res = UnhookWindowsHookEx(procId)
+                            if res = 0 then
+                                raise (Win32Exception(Marshal.GetLastWin32Error()))
+                            PostThreadMessage(messageLoopNativeTreadId.WaitValue(), WM_DESTROY, WPARAM.Zero, LPARAM.Zero) |> ignore
+                            messageLoopThread.Join()
+                        messageLoopNativeTreadId
+                    ]
                 <| fun _ ->
                     keySubject
