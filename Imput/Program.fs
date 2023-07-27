@@ -70,8 +70,7 @@ module Program =
             let inputListenerType = inputListenerConfig.GetRequiredSection("Type").Get<string>()
             match inputListenerType with
             | "LinuxDevInput" ->
-                let inputDeviceId = inputListenerConfig.GetRequiredSection("InputDeviceId").Get<int>()
-                LinuxDevInputEventInputListener(services.GetRequiredService<_>(), inputDeviceId)
+                AggregateLinuxDevInputEventInputListener(services.GetRequiredService<_>(), services.GetRequiredService<_>())
             | "Windows" ->
                 WindowsInputListener(services.GetRequiredService<_>(), services.GetRequiredService<_>())
             | _ ->
