@@ -45,7 +45,7 @@ To run the daemon in the background, execute the following command:
 ./Imput
 ```
 
-Once the daemon is running, open your preferred web browser and navigate to `http://localhost:5000/layouts/<YOUR_LAYOUT>` to access the specific layout.
+Once the daemon is running, open your preferred web browser and navigate to `http://localhost:5063/layouts/<YOUR_LAYOUT>.html` to access the specific layout.
 You can then test the functionality by pressing keys to ensure everything is functioning as expected.
 
 ## Integration with OBS
