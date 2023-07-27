@@ -24,26 +24,36 @@ allows for efficient handling of input events, providing users with a seamless a
 
 ## Usage
 
-The configuration for the daemon is located in the `./appsettings.json` file. Within this file, you will need to configure the `InputListener` according to your specific platform.
-> In the future, the InputListener type and its arguments will be automatically detected.
-
-#### Linux
-For Linux, set the `InputListener:Type` to `"LinuxDevInput"` and add a field `InputListener:InputDeviceId` with a corresponding `/dev/input/eventX` device value.
-#### Windows
-For Windows, set the `InputListener:Type` to `"Windows"`. No further configuration is required for this platform.
-
 ### Layout and styling
 
 Layouts are HTML files located in `./wwwroot/layouts/`.
 These HTML files allow you to use HTML, CSS, and JavaScript to create the desired layout. You can find some example layouts in this repository for reference.
 
-### Running
+### Running daemon
 
-To run the daemon in the background, execute the following command:
+To capture user's input the daemon should be run.
 
-```shell
-./Imput
-```
+> ### Linux
+>
+> Open a terminal in the application directory and execute the following command:
+>
+> ```bash
+> ./Imput
+> ```
+
+> ### Windows
+>
+> Open a terminal in the application directory and execute the following command:
+>
+> ```powershell
+> ./Imput.exe
+> ```
+>
+> Or just double-click on the `Imput.bat` file. A terminal window will open with the above command executed.
+
+You should keep the daemon running for the webui to function.
+
+### Running WebUI
 
 Once the daemon is running, open your preferred web browser and navigate to `http://localhost:5063/layouts/<YOUR_LAYOUT>.html` to access the specific layout.
 You can then test the functionality by pressing keys to ensure everything is functioning as expected.
