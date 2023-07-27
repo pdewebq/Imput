@@ -15,7 +15,6 @@
             height: 50px;
             width: 50px;
             text-align: center;
-            background-color: rgba(127, 127, 127, 0.8);
         }
         [data-key-code] {
             display: flex;
@@ -25,10 +24,10 @@
         span {
             user-select: none;
         }
-        .is-up {
-            /*background-color: white;*/
+        [data-key-state="up"] {
+            background-color: rgba(127, 127, 127, 0.8);
         }
-        .is-down {
+        [data-key-state="down"] {
             background-color: rgba(230, 230, 230, 0.8);
         }
     </style>

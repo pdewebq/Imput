@@ -1,3 +1,7 @@
+document.querySelectorAll("[data-key-code]").forEach((elem) => {
+    elem.setAttribute("data-key-state", "up")
+})
+
 function connect() {
     const webSocket = new WebSocket(`ws://${window.location.host}/ws/keys`)
 
@@ -22,13 +26,7 @@ function connect() {
 
         const elems = document.querySelectorAll(`[data-key-code="${keyEvent.code}"]`)
         for (const elem of elems) {
-            if (keyEvent.keyAction === "up") {
-                elem.classList.add("is-up")
-                elem.classList.remove("is-down")
-            } else if (keyEvent.keyAction === "down") {
-                elem.classList.remove("is-up")
-                elem.classList.add("is-down")
-            }
+            elem.setAttribute("data-key-state", keyEvent.keyAction)
         }
     }
 }
