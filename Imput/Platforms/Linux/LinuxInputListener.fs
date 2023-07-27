@@ -1,4 +1,4 @@
-namespace Imput.InputListening.Linux
+namespace Imput.Platforms.Linux
 
 open System.IO
 open System.Reactive.Linq
@@ -7,7 +7,6 @@ open FSharp.Control.Reactive
 open FsToolkit.ErrorHandling
 
 open Imput
-open Imput.InputListening
 
 
 [<Struct; StructLayout(LayoutKind.Sequential)>]
@@ -24,7 +23,7 @@ type KernelInputEvent = {
     Value: int32
 }
 
-type LinuxDevInputEventInputListener(eventId: int) =
+type LinuxDevInputEventInputListener(keyCodeMapper: KeyCodeMapper, eventId: int) =
     interface IInputListener with
         member this.Keys =
             // let buffer = Array.zeroCreate 24
@@ -38,7 +37,11 @@ type LinuxDevInputEventInputListener(eventId: int) =
                             do! Option.requireTrue (kernelInputEvent.Type = 1s)
                             let! keyAction = kernelInputEvent.Value |> function 1 -> Some KeyAction.Down | 0 -> Some KeyAction.Up | _ -> None
                             let keycode = kernelInputEvent.Code + 8s |> int
-                            return { Action = keyAction; KeyCode = keycode }
+                            return {
+                                Action = keyAction
+                                NativeCode = keycode
+                                Code = keyCodeMapper.FromLinuxKeyCode(keycode)
+                            }
                         }
                     })
                     |> Observable.choose id

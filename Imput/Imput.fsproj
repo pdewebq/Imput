@@ -7,10 +7,15 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Content Include="keycodes.csv" />
+    </ItemGroup>
+
+    <ItemGroup>
         <Compile Include="Utils.fs" />
-        <Compile Include="InputListening\InputListener.fs" />
-        <Compile Include="InputListening\LinuxInputListener.fs" />
-        <Compile Include="InputListening\WindowsInputListener.fs" />
+        <Compile Include="InputListener.fs" />
+        <Compile Include="KeyCodeMapper.fs" />
+        <Compile Include="Platforms\Linux\LinuxInputListener.fs" />
+        <Compile Include="Platforms\Windows\WindowsInputListener.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
 

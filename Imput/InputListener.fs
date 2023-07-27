@@ -1,4 +1,4 @@
-namespace Imput.InputListening
+namespace Imput
 
 open System
 
@@ -8,7 +8,8 @@ type KeyAction =
     | Down
 
 type KeyEvent = {
-    KeyCode: int
+    Code: string
+    NativeCode: int
     Action: KeyAction
 }
 

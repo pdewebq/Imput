@@ -1,4 +1,4 @@
-namespace Imput.InputListening.Windows
+namespace Imput.Platforms.Windows
 
 open System
 open System.ComponentModel
@@ -10,7 +10,6 @@ open FSharp.Control.Reactive
 open FsToolkit.ErrorHandling
 
 open Imput
-open Imput.InputListening
 
 module Interop =
 
@@ -119,7 +118,7 @@ open Interop.Defines
 open Interop.Structs
 open Interop.FunctionsImports
 
-type WindowsInputListener(logger: ILogger<WindowsInputListener>) =
+type WindowsInputListener(logger: ILogger<WindowsInputListener>, keyCodeMapper: KeyCodeMapper) =
 
     interface IInputListener with
         member this.Keys =
@@ -147,7 +146,11 @@ type WindowsInputListener(logger: ILogger<WindowsInputListener>) =
                                         Some KeyAction.Up
                                     | _ ->
                                         None
-                                return { KeyCode = keyCode; Action = keyAction }
+                                return {
+                                    Action = keyAction
+                                    NativeCode = keyCode
+                                    Code = keyCodeMapper.FromWindowsKeyCode(keyCode)
+                                }
                             }
                             keyEvent |> Option.iter ^fun keyEvent ->
                                 keySubject.OnNext(keyEvent)

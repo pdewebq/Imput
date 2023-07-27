@@ -17,15 +17,15 @@ function connect() {
     }
 
     webSocket.onmessage = (event) => {
-        const [keyAction, keyCodeStr] = event.data.split(",")
-        const keyCode = parseInt(keyCodeStr)
+        // console.log(event.data)
+        const keyEvent = JSON.parse(event.data)
 
-        const elems = document.querySelectorAll(`[data-keycode="${keyCode}"]`)
+        const elems = document.querySelectorAll(`[data-key-code="${keyEvent.code}"]`)
         for (const elem of elems) {
-            if (keyAction === "up") {
+            if (keyEvent.keyAction === "up") {
                 elem.classList.add("is-up")
                 elem.classList.remove("is-down")
-            } else if (keyAction === "down") {
+            } else if (keyEvent.keyAction === "down") {
                 elem.classList.remove("is-up")
                 elem.classList.add("is-down")
             }

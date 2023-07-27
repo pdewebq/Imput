@@ -5,6 +5,7 @@ open System.Net.WebSockets
 open System.Reactive.Linq
 open System.Reflection
 open System.Text
+open System.Text.Json
 open System.Threading
 open System.Threading.Tasks
 open FSharp.Control.Reactive
@@ -16,9 +17,8 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 
 open Imput
-open Imput.InputListening
-open Imput.InputListening.Linux
-open Imput.InputListening.Windows
+open Imput.Platforms.Linux
+open Imput.Platforms.Windows
 
 type InputListenerHostedService(logger: ILogger<InputListenerHostedService>, inputListener: IInputListener) =
     inherit BackgroundService()
@@ -26,11 +26,13 @@ type InputListenerHostedService(logger: ILogger<InputListenerHostedService>, inp
         use _ =
             inputListener.Keys
             |> Observable.subscribe ^fun ev ->
-                logger.LogInformation("Key {Action} {KeyCode}", ev.Action, ev.KeyCode)
+                logger.LogInformation("Key {Action} {Code} {NativeCode}", ev.Action, ev.Code, ev.NativeCode)
         do! Task.Delay(Timeout.Infinite, stoppingToken)
     }
 
-let sendKeys (applicationLifetime: IHostApplicationLifetime) (inputListener: IInputListener) (webSocket: WebSocket) = task {
+let sendKeys (ctx: HttpContext) (webSocket: WebSocket) = task {
+    let inputListener = ctx.RequestServices.GetRequiredService<IInputListener>()
+    let applicationLifetime = ctx.RequestServices.GetRequiredService<IHostApplicationLifetime>()
     try
         do! inputListener.Keys
             |> Observable.flatmapTask ^fun keyEvent -> task {
@@ -38,7 +40,7 @@ let sendKeys (applicationLifetime: IHostApplicationLifetime) (inputListener: IIn
                     match keyEvent.Action with
                     | KeyAction.Up -> "up"
                     | KeyAction.Down -> "down"
-                let data = $"%s{keyActionStr},%i{keyEvent.KeyCode}"
+                let data = JsonSerializer.Serialize({| keyAction = keyActionStr; code = keyEvent.Code; nativeCode = keyEvent.NativeCode |})
                 let buffer = ReadOnlyMemory(Encoding.UTF8.GetBytes(data))
                 do! webSocket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None)
             }
@@ -54,6 +56,12 @@ let main args =
         formatter.SingleLine <- true
     ) |> ignore
 
+    builder.Services.AddSingleton<KeyCodeMapper>(fun services ->
+        let keycodesFile = builder.Environment.ContentRootFileProvider.GetFileInfo("./keycodes.csv")
+        let mapper = KeyCodeMapper(keycodesFile.PhysicalPath)
+        mapper.Load().GetAwaiter().GetResult()
+        mapper
+    ) |> ignore
     builder.Services.AddTransient<IInputListener>(fun services ->
         let config = services.GetRequiredService<IConfiguration>()
         let inputListenerConfig = config.GetSection("InputListener")
@@ -61,9 +69,9 @@ let main args =
         match inputListenerType with
         | "LinuxDevInput" ->
             let inputDeviceId = inputListenerConfig.GetRequiredSection("InputDeviceId").Get<int>()
-            LinuxDevInputEventInputListener(inputDeviceId)
+            LinuxDevInputEventInputListener(services.GetRequiredService<_>(), inputDeviceId)
         | "Windows" ->
-            WindowsInputListener(services.GetRequiredService<_>())
+            WindowsInputListener(services.GetRequiredService<_>(), services.GetRequiredService<_>())
         | _ ->
             failwith $"Invalid InputListener type: {inputListenerType}"
     ) |> ignore
@@ -78,10 +86,8 @@ let main args =
         if ctx.Request.Path = PathString("/ws/keys") then
             if ctx.WebSockets.IsWebSocketRequest then
                 let! webSocket = ctx.WebSockets.AcceptWebSocketAsync()
-                let inputListener = ctx.RequestServices.GetRequiredService<IInputListener>()
-                let applicationLifetime = ctx.RequestServices.GetRequiredService<IHostApplicationLifetime>()
                 app.Logger.LogInformation("New client connected")
-                return! sendKeys applicationLifetime inputListener webSocket
+                return! sendKeys ctx webSocket
             else
                 ctx.Response.StatusCode <- StatusCodes.Status400BadRequest
         else
