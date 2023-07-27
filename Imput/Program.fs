@@ -77,7 +77,8 @@ module Program =
             | _ ->
                 failwith $"Invalid InputListener type: {inputListenerType}"
         ) |> ignore
-        builder.Services.AddHostedService<InputLogger>() |> ignore
+        if builder.Configuration.GetValue("InputLogger:Enable", false) then
+            builder.Services.AddHostedService<InputLogger>() |> ignore
 
         let app = builder.Build()
 
