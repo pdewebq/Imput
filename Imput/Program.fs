@@ -65,16 +65,12 @@ module Program =
             mapper
         ) |> ignore
         builder.Services.AddTransient<IInputListener>(fun services ->
-            let config = services.GetRequiredService<IConfiguration>()
-            let inputListenerConfig = config.GetSection("InputListener")
-            let inputListenerType = inputListenerConfig.GetRequiredSection("Type").Get<string>()
-            match inputListenerType with
-            | "LinuxDevInput" ->
+            if OperatingSystem.IsLinux() then
                 AggregateLinuxDevInputEventInputListener(services.GetRequiredService<_>(), services.GetRequiredService<_>())
-            | "Windows" ->
+            elif OperatingSystem.IsWindows() then
                 WindowsInputListener(services.GetRequiredService<_>(), services.GetRequiredService<_>())
-            | _ ->
-                failwith $"Invalid InputListener type: {inputListenerType}"
+            else
+                raise (PlatformNotSupportedException())
         ) |> ignore
         if builder.Configuration.GetValue("InputLogger:Enable", false) then
             builder.Services.AddHostedService<InputLogger>() |> ignore
