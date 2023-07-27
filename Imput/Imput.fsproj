@@ -7,7 +7,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Content Include="keycodes.csv" />
+        <Content Include="keycodes.csv">
+            <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+        </Content>
     </ItemGroup>
 
     <ItemGroup>
