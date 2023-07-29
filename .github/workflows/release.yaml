@@ -4,7 +4,7 @@ on:
   push:
     #tags: [ "v*.*.*" ]
     branches:
-      - tmp/ci
+      - tmp/ci-test
 
 jobs:
   publish-linux-x64-release:
