@@ -25,7 +25,7 @@ jobs:
             -p:PublishSingleFile=true --self-contained false \
             -p:DebugType=None -p:DebugSymbols=false `# Remove .pdb` \
             --output "$RUNNER_TEMP/publish/linux-x64/Imput"
-    - working-directory: ${{ vars.RUNNER_TEMP }}/publish/linux-x64
+    - working-directory: ${{ runner.temp }}/publish/linux-x64
       run: |
         version="$(echo "$GITHUB_REF_NAME" | sed -E 's/v(.+)/\1/g')"
         zip "./Imput-${version}_linux-x64.zip" ./Imput -r
