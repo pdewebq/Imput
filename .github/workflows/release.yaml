@@ -1,0 +1,115 @@
+name: Release
+
+on:
+  push:
+    tags: [ "v*.*.*" ]
+
+jobs:
+  publish-linux-x64-release:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 7.0.x
+    - name: .NET publish
+      run: |
+        dotnet publish "$GITHUB_WORKSPACE/Imput/Imput.fsproj" -c Release \
+            -r linux-x64 \
+            -p:PublishSingleFile=true --self-contained false \
+            -p:DebugType=None -p:DebugSymbols=false `# Remove .pdb` \
+            --output "$RUNNER_TEMP/publish/linux-x64"
+    - uses: actions/upload-artifact@v3
+      with:
+        name: linux-x64-release
+        path: "${{ runner.temp }}/publish/linux-x64/*"
+
+  publish-win-x64-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 7.0.x
+      - name: .NET publish
+        run: |
+          dotnet publish "$GITHUB_WORKSPACE/Imput/Imput.fsproj" -c Release \
+              -r win-x64 \
+              -p:PublishSingleFile=true --self-contained false \
+              -p:DebugType=None -p:DebugSymbols=false `# Remove .pdb` \
+              -p:IsWebConfigTransformDisabled=true `# Remove web.config` \
+              --output "$RUNNER_TEMP/publish/win-x64"
+      - run: cp "$GITHUB_WORKSPACE/deploy/windows/Imput.bat" "$RUNNER_TEMP/publish/win-x64/"
+      - uses: actions/upload-artifact@v3
+        with:
+          name: win-x64-release
+          path: "${{ runner.temp }}/publish/win-x64/*"
+
+  publish-win-x64-self-contained-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 7.0.x
+      - name: .NET publish
+        run: |
+          dotnet publish "$GITHUB_WORKSPACE/Imput/Imput.fsproj" -c Release \
+              -r win-x64 \
+              -p:PublishSingleFile=true --self-contained true \
+              -p:DebugType=None -p:DebugSymbols=false `# Remove .pdb` \
+              -p:IsWebConfigTransformDisabled=true `# Remove web.config` \
+              -p:IncludeNativeLibrariesForSelfExtract=true `# Remove aspnetcorev2_inprocess.dll` \
+              --output "$RUNNER_TEMP/publish/win-x64-self-contained"
+      - run: cp "$GITHUB_WORKSPACE/deploy/windows/Imput.bat" "$RUNNER_TEMP/publish/win-x64-self-contained/"
+      - uses: actions/upload-artifact@v3
+        with:
+          name: win-x64-self-contained-release
+          path: "${{ runner.temp }}/publish/win-x64-self-contained/*"
+
+  github-release:
+    needs: 
+    - publish-linux-x64-release
+    - publish-win-x64-release
+    - publish-win-x64-self-contained-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install zip
+        uses: montudor/action-zip@v1
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: linux-x64-release
+          path: ${{ github.workspace }}/linux-x64/Imput
+      - uses: actions/download-artifact@v3
+        with:
+          name: win-x64-release
+          path: ${{ github.workspace }}/win-x64/Imput
+      - uses: actions/download-artifact@v3
+        with:
+          name: win-x64-self-contained-release
+          path: ${{ github.workspace }}/win-x64-self-contained/Imput
+
+      - run: |
+          version="$(echo "$GITHUB_REF_NAME" | sed -E 's/v(.+)/\1/g')"
+          attach_file_path="$GITHUB_WORKSPACE/attach-files"
+          mkdir "$attach_file_path"
+          cd "$GITHUB_WORKSPACE/linux-x64"
+          zip "$attach_file_path/Imput-${version}_linux-x64.zip" ./Imput -r
+          cd -
+          cd "$GITHUB_WORKSPACE/win-x64"
+          zip "$attach_file_path/Imput-${version}_win-x64.zip" ./Imput -r
+          cd -
+          cd "$GITHUB_WORKSPACE/win-x64-self-contained"
+          zip "$attach_file_path/Imput-${version}_win-x64-self-contained.zip" ./Imput -r
+          cd -
+
+      - name: GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ github.workspace }}/attach-files/*
+          draft: true
+          generate_release_notes: true
