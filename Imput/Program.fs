@@ -1,20 +1,17 @@
 namespace Imput
 
 open System
-open System.Net.WebSockets
 open System.Reactive.Linq
 open System.Reflection
-open System.Text
-open System.Text.Json
 open System.Threading
 open System.Threading.Tasks
 open FSharp.Control.Reactive
+open Microsoft.AspNetCore.SignalR
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.AspNetCore.Builder
-open Microsoft.AspNetCore.Http
 
 open Imput
 open Imput.Platforms.Linux
@@ -30,11 +27,18 @@ type InputLogger(logger: ILogger<InputLogger>, inputListener: IInputListener) =
         do! Task.Delay(Timeout.Infinite, stoppingToken)
     }
 
-module Program =
+type InputHub(logger: ILogger<InputHub>) =
+    inherit Hub()
+    override this.OnConnectedAsync() = task {
+        logger.LogInformation("New client {ConnectionId} connected", this.Context.ConnectionId)
+    }
+    override this.OnDisconnectedAsync(_ex) = task {
+        logger.LogInformation("Client {ConnectionId} disconnected", this.Context.ConnectionId)
+    }
 
-    let sendKeys (ctx: HttpContext) (webSocket: WebSocket) = task {
-        let inputListener = ctx.RequestServices.GetRequiredService<IInputListener>()
-        let applicationLifetime = ctx.RequestServices.GetRequiredService<IHostApplicationLifetime>()
+type InputNotifier(hub: IHubContext<InputHub>, inputListener: IInputListener) =
+    inherit BackgroundService()
+    override this.ExecuteAsync(stoppingToken) = task {
         try
             do! inputListener.Keys
                 |> Observable.flatmapTask ^fun keyEvent -> task {
@@ -42,13 +46,14 @@ module Program =
                         match keyEvent.State with
                         | KeyState.Up -> "up"
                         | KeyState.Down -> "down"
-                    let data = JsonSerializer.Serialize({| keyState = keyStateStr; code = keyEvent.Code; nativeCode = keyEvent.NativeCode |})
-                    let buffer = ReadOnlyMemory(Encoding.UTF8.GetBytes(data))
-                    do! webSocket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None)
+                    do! hub.Clients.All.SendAsync("ReceiveKey", keyEvent.Code, keyStateStr, keyEvent.NativeCode)
                 }
-                |> fun obs -> Observable.ForEachAsync(obs, ignore, applicationLifetime.ApplicationStopping)
-        with :? OperationCanceledException -> ()
+                |> fun obs -> Observable.ForEachAsync(obs, ignore, stoppingToken)
+        with :? OperationCanceledException ->
+            ()
     }
+
+module Program =
 
     let getInputListener (config: IConfigurationSection) (services: IServiceProvider) : IInputListener =
         let listenerType = config.GetValue("Type", "Auto")
@@ -91,28 +96,23 @@ module Program =
             mapper.Load().GetAwaiter().GetResult()
             mapper
         ) |> ignore
+
         builder.Services.AddTransient<IInputListener>(fun services ->
             getInputListener (builder.Configuration.GetSection("InputListener")) services
         ) |> ignore
+
         if builder.Configuration.GetValue("InputLogger:Enable", false) then
             builder.Services.AddHostedService<InputLogger>() |> ignore
+
+        builder.Services.AddSignalR() |> ignore
+
+        builder.Services.AddHostedService<InputNotifier>() |> ignore
 
         let app = builder.Build()
 
         app.Logger.LogInformation("Version {Version}", Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion)
 
-        app.UseWebSockets() |> ignore
-        app.Use(fun ctx (next: RequestDelegate) -> (task {
-            if ctx.Request.Path = PathString("/ws/keys") then
-                if ctx.WebSockets.IsWebSocketRequest then
-                    let! webSocket = ctx.WebSockets.AcceptWebSocketAsync()
-                    app.Logger.LogInformation("New client connected")
-                    return! sendKeys ctx webSocket
-                else
-                    ctx.Response.StatusCode <- StatusCodes.Status400BadRequest
-            else
-                return! next.Invoke(ctx)
-        } :> Task)) |> ignore
+        app.MapHub<InputHub>("/input") |> ignore
 
         app.UseStaticFiles() |> ignore
 
