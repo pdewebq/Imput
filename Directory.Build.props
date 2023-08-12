@@ -4,4 +4,8 @@
         <Version>0.1.1</Version>
     </PropertyGroup>
 
+    <PropertyGroup Condition="'$(MSBuildProjectExtension)' == '.fsproj'">
+        <LangVersion>7.0</LangVersion>
+    </PropertyGroup>
+
 </Project>
