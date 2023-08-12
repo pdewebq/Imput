@@ -31,18 +31,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="Utils.fs" />
-        <Compile Include="InputListener.fs" />
-        <Compile Include="KeyCodeMapper.fs" />
-        <Compile Include="Platforms\Linux\LinuxInputListener.fs" />
-        <Compile Include="Platforms\Windows\WindowsInputListener.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Update="FSharp.Core" Version="7.0.300" />
-        <PackageReference Include="FSharp.Control.Reactive" Version="5.0.5" />
-        <PackageReference Include="FsToolkit.ErrorHandling" Version="4.9.0" />
+      <ProjectReference Include="..\Imput.InputListening\Imput.InputListening.fsproj" />
     </ItemGroup>
 
 </Project>

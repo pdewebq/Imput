@@ -14,8 +14,9 @@ open Microsoft.Extensions.DependencyInjection
 open Microsoft.AspNetCore.Builder
 
 open Imput
-open Imput.Platforms.Linux
-open Imput.Platforms.Windows
+open Imput.InputListening
+open Imput.InputListening.Platforms.Linux
+open Imput.InputListening.Platforms.Windows
 
 type InputLogger(logger: ILogger<InputLogger>, inputListener: IInputListener) =
     inherit BackgroundService()

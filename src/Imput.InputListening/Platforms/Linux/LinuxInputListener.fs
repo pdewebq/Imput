@@ -1,4 +1,4 @@
-namespace Imput.Platforms.Linux
+namespace Imput.InputListening.Platforms.Linux
 
 open System
 open System.IO
@@ -9,6 +9,7 @@ open FSharp.Control.Reactive
 open FsToolkit.ErrorHandling
 
 open Imput
+open Imput.InputListening
 
 
 [<Struct; StructLayout(LayoutKind.Sequential)>]

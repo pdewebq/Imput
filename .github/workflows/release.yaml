@@ -15,7 +15,7 @@ jobs:
         dotnet-version: 7.0.x
     - name: .NET publish
       run: |
-        dotnet publish "$GITHUB_WORKSPACE/Imput/Imput.fsproj" -c Release \
+        dotnet publish "$GITHUB_WORKSPACE/src/Imput/Imput.fsproj" -c Release \
             -r linux-x64 \
             -p:PublishSingleFile=true --self-contained false \
             -p:DebugType=None -p:DebugSymbols=false `# Remove .pdb` \
@@ -35,7 +35,7 @@ jobs:
           dotnet-version: 7.0.x
       - name: .NET publish
         run: |
-          dotnet publish "$GITHUB_WORKSPACE/Imput/Imput.fsproj" -c Release \
+          dotnet publish "$GITHUB_WORKSPACE/src/Imput/Imput.fsproj" -c Release \
               -r win-x64 \
               -p:PublishSingleFile=true --self-contained false \
               -p:DebugType=None -p:DebugSymbols=false `# Remove .pdb` \
@@ -57,7 +57,7 @@ jobs:
           dotnet-version: 7.0.x
       - name: .NET publish
         run: |
-          dotnet publish "$GITHUB_WORKSPACE/Imput/Imput.fsproj" -c Release \
+          dotnet publish "$GITHUB_WORKSPACE/src/Imput/Imput.fsproj" -c Release \
               -r win-x64 \
               -p:PublishSingleFile=true --self-contained true \
               -p:DebugType=None -p:DebugSymbols=false `# Remove .pdb` \

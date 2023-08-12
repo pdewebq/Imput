@@ -1,4 +1,4 @@
-namespace Imput.Platforms.Windows
+namespace Imput.InputListening.Platforms.Windows
 
 open System
 open System.ComponentModel
@@ -10,6 +10,7 @@ open FSharp.Control.Reactive
 open FsToolkit.ErrorHandling
 
 open Imput
+open Imput.InputListening
 
 module Interop =
 

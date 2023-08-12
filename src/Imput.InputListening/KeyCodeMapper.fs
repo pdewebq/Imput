@@ -1,4 +1,4 @@
-namespace Imput
+namespace Imput.InputListening
 
 open System.Collections.Generic
 open System.IO

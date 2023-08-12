@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <RootNamespace>Imput.InputListening</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="Utils.fs" />
+        <Compile Include="InputListener.fs" />
+        <Compile Include="KeyCodeMapper.fs" />
+        <Compile Include="Platforms\Windows\WindowsInputListener.fs" />
+        <Compile Include="Platforms\Linux\LinuxInputListener.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="FSharp.Control.Reactive" Version="5.0.5" />
+        <PackageReference Include="FsToolkit.ErrorHandling" Version="4.9.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
+    </ItemGroup>
+
+</Project>
