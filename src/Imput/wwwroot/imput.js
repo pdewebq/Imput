@@ -1,3 +1,5 @@
+import "https://cdn.jsdelivr.net/npm/@microsoft/signalr@7.0.9/dist/browser/signalr.min.js"
+
 function getAllKeyElements() {
     return document.querySelectorAll("[data-key-code]")
 }
@@ -34,4 +36,15 @@ connection.on("ReceiveKey", (keyCode, keyState, _nativeKeyCode) => {
     }
 })
 
-connection.start()
+async function start() {
+    try {
+        await connection.start()
+        console.assert(connection.state === signalR.HubConnectionState.Connected)
+    } catch (err) {
+        console.assert(connection.state === signalR.HubConnectionState.Disconnected)
+        console.error(err)
+        setTimeout(() => start(), 5_000)
+    }
+}
+
+start()
