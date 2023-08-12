@@ -9,9 +9,9 @@
     <ItemGroup>
         <Compile Include="Utils.fs" />
         <Compile Include="InputListener.fs" />
-        <Compile Include="KeyCodeMapper.fs" />
         <Compile Include="Platforms\Windows\WindowsInputListener.fs" />
         <Compile Include="Platforms\Linux\LinuxInputListener.fs" />
+        <Compile Include="CsvTableMultiplatformKeyCodeMapper.fs" />
     </ItemGroup>
 
     <ItemGroup>

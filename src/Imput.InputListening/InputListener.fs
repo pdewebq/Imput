@@ -9,7 +9,6 @@ type KeyState =
 
 type KeyEvent = {
     Code: string
-    NativeCode: int
     State: KeyState
 }
 

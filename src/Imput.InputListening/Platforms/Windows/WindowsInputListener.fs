@@ -119,7 +119,10 @@ open Interop.Defines
 open Interop.Structs
 open Interop.FunctionsImports
 
-type WindowsInputListener(logger: ILogger<WindowsInputListener>, keyCodeMapper: KeyCodeMapper) =
+type IWindowsKeyCodeMapper =
+    abstract FromWindowsKeyCode: windowsKeyCode: int -> string
+
+type WindowsInputListener(logger: ILogger<WindowsInputListener>, keyCodeMapper: IWindowsKeyCodeMapper) =
 
     interface IInputListener with
         member this.Keys =
@@ -149,7 +152,6 @@ type WindowsInputListener(logger: ILogger<WindowsInputListener>, keyCodeMapper: 
                                         None
                                 return {
                                     State = keyState
-                                    NativeCode = keyCode
                                     Code = keyCodeMapper.FromWindowsKeyCode(keyCode)
                                 }
                             }

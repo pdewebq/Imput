@@ -11,22 +11,28 @@ open FsToolkit.ErrorHandling
 open Imput
 open Imput.InputListening
 
+module Interop =
 
-[<Struct; StructLayout(LayoutKind.Sequential)>]
-type KernelTimeVal = {
-    Sec: int64
-    Usec: int64
-}
+    [<Struct; StructLayout(LayoutKind.Sequential)>]
+    type KernelTimeVal = {
+        Sec: int64
+        Usec: int64
+    }
 
-[<Struct; StructLayout(LayoutKind.Sequential)>]
-type KernelInputEvent = {
-    Time: KernelTimeVal
-    Type: int16
-    Code: int16
-    Value: int32
-}
+    [<Struct; StructLayout(LayoutKind.Sequential)>]
+    type KernelInputEvent = {
+        Time: KernelTimeVal
+        Type: int16
+        Code: int16
+        Value: int32
+    }
 
-type LinuxDevInputEventInputListener(keyCodeMapper: KeyCodeMapper, stream: Stream) =
+open Interop
+
+type ILinuxKeyCodeMapper =
+    abstract FromLinuxKeyCode: linuxKeyCode: int -> string
+
+type LinuxDevInputEventInputListener(keyCodeMapper: ILinuxKeyCodeMapper, stream: Stream) =
     interface IInputListener with
         member this.Keys =
             Observable.FromAsync(fun () -> task {
@@ -39,7 +45,6 @@ type LinuxDevInputEventInputListener(keyCodeMapper: KeyCodeMapper, stream: Strea
                     let keycode = kernelInputEvent.Code + 8s |> int
                     return {
                         State = keyState
-                        NativeCode = keycode
                         Code = keyCodeMapper.FromLinuxKeyCode(keycode)
                     }
                 }
@@ -47,7 +52,7 @@ type LinuxDevInputEventInputListener(keyCodeMapper: KeyCodeMapper, stream: Strea
             |> Observable.choose id
             |> Observable.repeat
 
-type AggregateLinuxDevInputEventInputListener(logger: ILogger<AggregateLinuxDevInputEventInputListener>, keyCodeMapper: KeyCodeMapper, ?eventFiles: string array) =
+type AggregateLinuxDevInputEventInputListener(logger: ILogger<AggregateLinuxDevInputEventInputListener>, keyCodeMapper: ILinuxKeyCodeMapper, ?eventFiles: string array) =
     interface IInputListener with
         member this.Keys =
             Observable.defer ^fun () ->

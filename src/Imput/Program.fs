@@ -24,7 +24,7 @@ type InputLogger(logger: ILogger<InputLogger>, inputListener: IInputListener) =
         use _ =
             inputListener.Keys
             |> Observable.subscribe ^fun ev ->
-                logger.LogInformation("Key {State} {Code} (native: {NativeCode})", ev.State, ev.Code, ev.NativeCode)
+                logger.LogInformation("Key {State} {Code}", ev.State, ev.Code)
         do! Task.Delay(Timeout.Infinite, stoppingToken)
     }
 
@@ -47,7 +47,7 @@ type InputNotifier(hub: IHubContext<InputHub>, inputListener: IInputListener) =
                         match keyEvent.State with
                         | KeyState.Up -> "up"
                         | KeyState.Down -> "down"
-                    do! hub.Clients.All.SendAsync("ReceiveKey", keyEvent.Code, keyStateStr, keyEvent.NativeCode)
+                    do! hub.Clients.All.SendAsync("ReceiveKey", keyEvent.Code, keyStateStr)
                 }
                 |> fun obs -> Observable.ForEachAsync(obs, ignore, stoppingToken)
         with :? OperationCanceledException ->
@@ -91,12 +91,14 @@ module Program =
             formatter.SingleLine <- true
         ) |> ignore
 
-        builder.Services.AddSingleton<KeyCodeMapper>(fun services ->
+        builder.Services.AddSingleton<CsvTableMultiplatformKeyCodeMapper>(fun services ->
             let keycodesFile = builder.Environment.ContentRootFileProvider.GetFileInfo("./keycodes.csv")
-            let mapper = KeyCodeMapper(keycodesFile.PhysicalPath)
+            let mapper = CsvTableMultiplatformKeyCodeMapper(services.GetRequiredService<_>(), keycodesFile.PhysicalPath)
             mapper.Load().GetAwaiter().GetResult()
             mapper
         ) |> ignore
+        builder.Services.AddTransient<ILinuxKeyCodeMapper>(fun services -> services.GetRequiredService<CsvTableMultiplatformKeyCodeMapper>()) |> ignore
+        builder.Services.AddTransient<IWindowsKeyCodeMapper>(fun services -> services.GetRequiredService<CsvTableMultiplatformKeyCodeMapper>()) |> ignore
 
         builder.Services.AddTransient<IInputListener>(fun services ->
             getInputListener (builder.Configuration.GetSection("InputListener")) services

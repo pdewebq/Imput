@@ -29,7 +29,7 @@ connection.onreconnected((_connectionId) => {
     upAllKeys()
 })
 
-connection.on("ReceiveKey", (keyCode, keyState, _nativeKeyCode) => {
+connection.on("ReceiveKey", (keyCode, keyState) => {
     const keyElems = document.querySelectorAll(`[data-key-code="${keyCode}"]`)
     for (const keyElem of keyElems) {
         keyElem.setAttribute("data-key-state", keyState)
