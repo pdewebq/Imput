@@ -12,4 +12,8 @@
         <UseArtifactsOutput>true</UseArtifactsOutput>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    </PropertyGroup>
+
 </Project>
