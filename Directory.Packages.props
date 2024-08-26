@@ -1,0 +1,15 @@
+<Project>
+
+    <PropertyGroup>
+        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageVersion Include="FSharp.Core" Version="8.0.400" />
+
+        <PackageVersion Include="FSharp.Control.Reactive" Version="5.0.5" />
+        <PackageVersion Include="FsToolkit.ErrorHandling" Version="4.16.0" />
+        <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
+    </ItemGroup>
+
+</Project>

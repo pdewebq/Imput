@@ -8,6 +8,11 @@
         <LangVersion>8.0</LangVersion>
     </PropertyGroup>
 
+    <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.fsproj'">
+        <!-- For CPM -->
+        <PackageReference Include="FSharp.Core" />
+    </ItemGroup>
+
     <PropertyGroup>
         <UseArtifactsOutput>true</UseArtifactsOutput>
     </PropertyGroup>
