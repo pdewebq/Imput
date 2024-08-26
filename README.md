@@ -17,12 +17,12 @@ allows for efficient handling of input events, providing users with a seamless a
 > ### Windows
 >
 > Download the latest release in the [releases page](https://github.com/pdewebq/Imput/releases). Choose `win-x64` or `win-x64-self-contained`.
-> - `win-x64` — you will need to install [.NET 7.0 Runtime and ASP.NET Core Runtime 7.0](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-aspnetcore-7.0.9-windows-hosting-bundle-installer) runtime. The binaries size is much lower.
+> - `win-x64` — you will need to install [.NET 8.0 Runtime and ASP.NET Core Runtime 8.0](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-aspnetcore-8.0.8-windows-hosting-bundle-installer) runtime. The binaries size is much lower.
 > - `win-x64-self-contained` — nothing is needed to install. The binaries size is much larger.
 
 > ### Linux
 >
-> Install [.NET 7.0 Runtime and ASP.NET Core Runtime 7.0](https://learn.microsoft.com/dotnet/core/install/linux).
+> Install [.NET 8.0 Runtime and ASP.NET Core Runtime 8.0](https://learn.microsoft.com/dotnet/core/install/linux).
 > Download the latest release in the [releases page](https://github.com/pdewebq/Imput/releases). Choose `linux-x64`.
 
 ## Usage
