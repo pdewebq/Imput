@@ -1,7 +1,0 @@
-<Project>
-
-    <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.fsproj'">
-        <PackageReference Update="FSharp.Core" Version="7.0.400" />
-    </ItemGroup>
-
-</Project>
